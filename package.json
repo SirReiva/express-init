@@ -1,0 +1,32 @@
+{
+	"name": "express-boilerplate",
+	"version": "1.0.0",
+	"description": "",
+	"main": "index.js",
+	"scripts": {
+		"dev": "tsc-watch --onSuccess \"node dist/main.js\"",
+		"clean": "rimraf dist"
+	},
+	"author": "",
+	"license": "ISC",
+	"devDependencies": {
+		"@types/bcrypt": "^5.0.0",
+		"@types/cors": "^2.8.12",
+		"@types/express": "^4.17.13",
+		"@types/jsonwebtoken": "^8.5.5",
+		"@types/node": "^16.10.2",
+		"prettier": "^2.4.1",
+		"rimraf": "^3.0.2",
+		"tsc-watch": "^4.5.0",
+		"typescript": "^4.4.3"
+	},
+	"dependencies": {
+		"bcrypt": "^5.0.1",
+		"cors": "^2.8.5",
+		"express": "^4.17.1",
+		"fastest-validator": "^1.11.1",
+		"inversify": "^5.1.1",
+		"jsonwebtoken": "^8.5.1",
+		"reflect-metadata": "^0.1.13"
+	}
+}
