@@ -4,12 +4,17 @@ import {
 	RequestMappingMethodMetadata,
 } from '@Core/decorators/route.decorator';
 import { HttpError } from '@Core/error';
+import { ReqHandler } from '@Core/interfaces/router.interfaces';
 import {
+	guardMiddleware,
 	validationBodyMiddleware,
+	validationParamsMiddleware,
 	validationQueryParamsMiddleware,
 } from '@Core/middlewares';
 import { getDefaultStatus } from '@Core/utils';
 import { ClassConstructor } from 'class-transformer';
+//@ts-ignore
+import { defaultMetadataStorage } from 'class-transformer/cjs/storage';
 import { validationMetadatasToSchemas } from 'class-validator-jsonschema';
 import {
 	Application,
@@ -44,7 +49,7 @@ export const registerControllers = (
 			prefix ? appInstance.use(prefix, router) : appInstance.use(router)
 		);
 
-	console.log(schemas);
+	// console.log(JSON.stringify(schemas, null, 4));
 	// console.log(JSON.stringify(swaggerDocument, null, 4));
 	appInstance.use('/api-docs', serve);
 	appInstance.get('/api-docs', setup(swaggerDocument));
@@ -53,7 +58,7 @@ export const registerControllers = (
 		(error: any, _req: Request, res: Response, _next: NextFunction) => {
 			if (error instanceof HttpError)
 				return res.status(error.status).json(error.data);
-			res.status(500).send(error.toString());
+			return res.status(500).send(error.toString());
 		}
 	);
 };
@@ -61,18 +66,24 @@ export const registerControllers = (
 const initializeSwaggerData = (): {
 	schemas: Record<string, SchemaObject>;
 	swaggerDocument: OpenAPIV2.Document;
-} => ({
-	schemas: validationMetadatasToSchemas(),
-	swaggerDocument: {
-		swagger: '2.0',
-		info: {
-			description: 'This is a sample ',
-			version: '1.0.0',
-			title: 'Swagger Test',
+} => {
+	const schemas = validationMetadatasToSchemas({
+		classTransformerMetadataStorage: defaultMetadataStorage,
+	});
+	return {
+		schemas,
+		swaggerDocument: {
+			swagger: '2.0',
+			info: {
+				description: 'This is a sample ',
+				version: '1.0.0',
+				title: 'Swagger Test',
+			},
+			paths: {},
+			definitions: schemas as OpenAPIV2.DefinitionsObject,
 		},
-		paths: {},
-	},
-});
+	};
+};
 
 const registerRouteController = (
 	Controller: ClassConstructor<any>,
@@ -100,7 +111,8 @@ const registerRouteController = (
 			instanceController,
 			router,
 			swaggerDocument,
-			schemas
+			schemas,
+			diContainer
 		)
 	);
 
@@ -116,27 +128,43 @@ const registerMethodControler = (
 	instanceController: any,
 	router: Router,
 	swaggerDocument: OpenAPIV2.Document,
-	schemas: Record<string, SchemaObject>
+	schemas: Record<string, SchemaObject>,
+	diContainer: Container
 ): void => {
 	const { method, path = '/' } = mtdFn;
 	const {
 		statusCode = getDefaultStatus(method),
 		body,
 		queryParams,
+		params,
+		guards = [],
 		responses = {},
 	} = (mtdFn.options || {}) as BodyRouteOptions;
 
-	const pipes: RequestHandler[] = [];
+	const pipes: ReqHandler[] = [];
 	const parameters: OpenAPIV2.Parameters = [];
 
 	if (body) {
 		parameters.push({
 			in: 'body',
-			schema: schemas[body.name],
+			$ref: `#/definitions/${body.name}`,
 			name: body.name,
 			type: 'object',
 		});
 		pipes.push(validationBodyMiddleware(body));
+	}
+
+	if (params) {
+		parameters.push(
+			...Object.keys(schemas[params.name].properties || {}).map(key => ({
+				in: 'path',
+				name: key,
+				//@ts-ignore
+				type: schemas[params.name].properties[key].type,
+				required: schemas[params.name].required?.includes(key),
+			}))
+		);
+		pipes.push(validationParamsMiddleware(params));
 	}
 
 	if (queryParams) {
@@ -156,6 +184,11 @@ const registerMethodControler = (
 		pipes.push(validationQueryParamsMiddleware(queryParams));
 	}
 
+	if (guards.length) {
+		const instancesGuard = guards.map(guard => diContainer.resolve(guard));
+		pipes.push(guardMiddleware(...instancesGuard));
+	}
+
 	pipes.push(async (req, res, next) => {
 		try {
 			if (statusCode) res.status(statusCode);
@@ -169,7 +202,7 @@ const registerMethodControler = (
 		}
 	});
 
-	router[method](path, ...pipes);
+	router[method](path, ...(pipes as RequestHandler[]));
 
 	const swResponses: OpenAPIV2.ResponsesObject = {};
 	for (const statusCodeRes in responses) {
@@ -179,9 +212,17 @@ const registerMethodControler = (
 		};
 	}
 
-	if (!swaggerDocument.paths[prefix + path])
-		swaggerDocument.paths[prefix + path] = {};
-	swaggerDocument.paths[prefix + path][method] = {
+	const entirePath = (prefix + path)
+		.split('/')
+		.map(segment => {
+			if (!segment.startsWith(':')) return segment;
+			return `{${segment.substring(1)}}`;
+		})
+		.join('/');
+
+	if (!swaggerDocument.paths[entirePath])
+		swaggerDocument.paths[entirePath] = {};
+	swaggerDocument.paths[entirePath][method] = {
 		summary: mtdFn.methodName.toString(),
 		parameters,
 		responses: swResponses,

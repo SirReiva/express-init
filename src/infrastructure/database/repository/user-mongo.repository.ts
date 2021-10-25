@@ -17,7 +17,7 @@ export class UserMongoRepository implements IUserRepository {
 		const userDB = await UserModel.findOne({ email }).exec();
 		if (userDB)
 			return {
-				id: userDB.id,
+				id: userDB.id.toString(),
 				email: userDB.email,
 				name: userDB.name,
 				password: userDB.password,
@@ -30,7 +30,7 @@ export class UserMongoRepository implements IUserRepository {
 		const userDB = await UserModel.findById(id).exec();
 		if (userDB)
 			return {
-				id: userDB.id,
+				id: userDB.id.toString(),
 				email: userDB.email,
 				name: userDB.name,
 				password: userDB.password,
@@ -57,7 +57,7 @@ export class UserMongoRepository implements IUserRepository {
 		return {
 			count,
 			data: result.map(({ id, email, name, password }) => ({
-				id,
+				id: id.toString(),
 				email,
 				name,
 				password,

@@ -1,10 +1,13 @@
+import { IGuard } from '@Core/interfaces/guard.interface';
 import { ClassConstructor } from 'class-transformer';
 import { ROUTING_METHODS } from '../constants';
 
 export type RouteOptions = {
 	statusCode?: number;
 	queryParams?: ClassConstructor<any>;
+	params?: ClassConstructor<any>;
 	responses?: Record<number, ClassConstructor<any>>;
+	guards?: ClassConstructor<IGuard>[];
 };
 
 export type BodyRouteOptions = RouteOptions & {

@@ -49,3 +49,7 @@ export const verifyJWT = <T>(token: string, key: string): Promise<T> => {
 		);
 	});
 };
+
+export const isPromise = <T>(p: any): p is Promise<T> => {
+	return p && Object.prototype.toString.call(p) === '[object Promise]';
+};

@@ -1,17 +1,12 @@
-import { ClassConstructor, Expose, Type } from 'class-transformer';
-import { IsArray, IsInt } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsArray, IsInt, ValidateNested } from 'class-validator';
+import { UserDTO } from './user.dto';
 
-export const PaginatedResponse = <T>(
-	type: ClassConstructor<T>
-): ClassConstructor<T> => {
-	class PaginatedResponse {
-		@IsInt()
-		count: number;
-		@Type(() => type)
-		@IsArray()
-		@Expose()
-		data: T[];
-	}
-
-	return PaginatedResponse as any;
-};
+export class PaginatedUserResponseDTO {
+	@IsInt()
+	count: number;
+	@IsArray()
+	@Type(() => UserDTO)
+	@ValidateNested({ each: true })
+	data: UserDTO[];
+}
