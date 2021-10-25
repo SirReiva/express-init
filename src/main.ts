@@ -2,9 +2,11 @@ import 'reflect-metadata';
 import http, { Server } from 'http';
 import express, { urlencoded, json } from 'express';
 import cors from 'cors';
-import { registerControllers } from './core';
 import { diContainer } from './container';
-import { TestController } from './infrastructure/controllers/test.controller';
+import { UserController } from './infrastructure/controllers/user.controller';
+import { registerControllers } from '@Core/router';
+import config from 'config';
+import { connect, ConnectOptions } from 'mongoose';
 
 const app = express();
 const server: Server = http.createServer(app);
@@ -18,8 +20,17 @@ app.use(
 );
 app.use(json());
 
-registerControllers(diContainer, app, TestController);
+registerControllers(diContainer, app, UserController);
 
-server.listen(3000, () => {
-	console.log('Listen port 3000');
+const dbOptions: ConnectOptions = {
+	auth: {
+		username: config.DB.USER,
+		password: config.DB.PASSWORD,
+	},
+};
+
+connect(config.DB.URL, dbOptions).then(() => {
+	server.listen(3000, () => {
+		console.log('Listen port 3000');
+	});
 });

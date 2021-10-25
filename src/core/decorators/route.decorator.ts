@@ -1,7 +1,14 @@
+import { ClassConstructor } from 'class-transformer';
 import { ROUTING_METHODS } from '../constants';
 
-type RouteOptions = {
+export type RouteOptions = {
 	statusCode?: number;
+	queryParams?: ClassConstructor<any>;
+	responses?: Record<number, ClassConstructor<any>>;
+};
+
+export type BodyRouteOptions = RouteOptions & {
+	body?: ClassConstructor<any>;
 };
 
 export enum RequestMethod {
@@ -22,14 +29,14 @@ const defaultMetadata: RequestMappingMetadata = {
 export interface RequestMappingMetadata {
 	path?: string;
 	method?: RequestMethod;
-	options?: RouteOptions;
+	options?: RouteOptions | BodyRouteOptions;
 }
 
 export interface RequestMappingMethodMetadata {
 	path?: string;
 	method: RequestMethod;
 	methodName: string | symbol;
-	options?: RouteOptions;
+	options?: RouteOptions | BodyRouteOptions;
 }
 
 export const RequestMapping = (
@@ -51,14 +58,18 @@ export const RequestMapping = (
 			methodName: key,
 			options: metadata.options,
 		});
-		Reflect.defineMetadata(ROUTING_METHODS, routingMethods, target.constructor);
+		Reflect.defineMetadata(
+			ROUTING_METHODS,
+			routingMethods,
+			target.constructor
+		);
 		return descriptor;
 	};
 };
 
 const createMappingDecorator =
-	(method: RequestMethod) =>
-	(path?: string, options?: RouteOptions): MethodDecorator => {
+	<T extends RouteOptions | BodyRouteOptions>(method: RequestMethod) =>
+	(path?: string, options?: T): MethodDecorator => {
 		return RequestMapping({
 			path,
 			method,
@@ -66,16 +77,24 @@ const createMappingDecorator =
 		});
 	};
 
-export const Post = createMappingDecorator(RequestMethod.POST);
+export const Post = createMappingDecorator<BodyRouteOptions>(
+	RequestMethod.POST
+);
 
-export const Get = createMappingDecorator(RequestMethod.GET);
+export const Get = createMappingDecorator<RouteOptions>(RequestMethod.GET);
 
-export const Delete = createMappingDecorator(RequestMethod.DELETE);
+export const Delete = createMappingDecorator<BodyRouteOptions>(
+	RequestMethod.DELETE
+);
 
-export const Put = createMappingDecorator(RequestMethod.PUT);
+export const Put = createMappingDecorator<BodyRouteOptions>(RequestMethod.PUT);
 
-export const Patch = createMappingDecorator(RequestMethod.PATCH);
+export const Patch = createMappingDecorator<BodyRouteOptions>(
+	RequestMethod.PATCH
+);
 
-export const Options = createMappingDecorator(RequestMethod.OPTIONS);
+export const Options = createMappingDecorator<RouteOptions>(
+	RequestMethod.OPTIONS
+);
 
-export const Head = createMappingDecorator(RequestMethod.HEAD);
+export const Head = createMappingDecorator<RouteOptions>(RequestMethod.HEAD);

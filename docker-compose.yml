@@ -1,0 +1,44 @@
+version: '3.7'
+services:
+    mongodb-primary:
+        container_name: express_dev_mongodb
+        image: docker.io/bitnami/mongodb:latest
+        environment:
+            - MONGODB_ADVERTISED_HOSTNAME=localhost
+            - MONGODB_REPLICA_SET_MODE=primary
+            - MONGODB_ROOT_PASSWORD=admin
+            - MONGODB_REPLICA_SET_KEY=replicasetkey123
+            - MONGODB_REPLICA_SET_NAME=express
+        ports:
+            - 27017:27017
+        expose:
+            - 27017
+        volumes:
+            - ./init/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+            - mongodb_data_container:/bitnami/mongodb
+        networks:
+            - express-network
+    mongo-express:
+        container_name: express_dev_mongo_express
+        image: mongo-express:latest
+        ports:
+            - 8081:8081
+        environment:
+            ME_CONFIG_BASICAUTH_USERNAME: root
+            ME_CONFIG_BASICAUTH_PASSWORD: admin
+            ME_CONFIG_MONGODB_SERVER: express_dev_mongodb
+            ME_CONFIG_MONGODB_ADMINUSERNAME: root
+            ME_CONFIG_MONGODB_ADMINPASSWORD: admin
+        depends_on:
+            - mongodb-primary
+        links:
+            - mongodb-primary
+        networks:
+            - express-network
+
+volumes:
+    mongodb_data_container:
+        driver: local
+networks:
+    express-network:
+        driver: bridge

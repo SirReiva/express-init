@@ -20,9 +20,16 @@
 		"outDir": "./dist",
 		"esModuleInterop": true,
 		"moduleResolution": "node",
-		"paths": {},
+		"rootDir": "./src",
+		"baseUrl": "src",
+		"paths": {
+			"@Core/*": ["core/*"],
+			"@Config": ["config/index"],
+			"@Infrastructure/*": ["infrastructure/*"],
+			"@Application/*": ["application/*"]
+		},
 		"noFallthroughCasesInSwitch": true,
-		"noImplicitReturns": true,
+		"noImplicitReturns": false,
 		"noUnusedLocals": true,
 		"noUnusedParameters": true,
 		"emitDecoratorMetadata": true,
@@ -33,5 +40,6 @@
 		"importsNotUsedAsValues": "remove",
 		"resolveJsonModule": true,
 		"skipLibCheck": true
-	}
+	},
+	"include": ["src"]
 }
