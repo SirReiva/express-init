@@ -16,7 +16,7 @@
 		"@types/jsonwebtoken": "8.5.8",
 		"@types/node": "16.11.26",
 		"openapi-types": "10.0.0",
-		"prettier": "2.5.1",
+		"prettier": "2.6.0",
 		"rimraf": "^3.0.2",
 		"tsc-watch": "4.6.2",
 		"tsconfig-paths": "3.14.0",
