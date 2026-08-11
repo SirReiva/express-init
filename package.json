@@ -30,7 +30,7 @@
 		"class-validator-jsonschema": "^5.0.0",
 		"cors": "^2.8.5",
 		"express": "^5.0.0",
-		"inversify": "^7.0.0",
+		"inversify": "^8.0.0",
 		"jsonwebtoken": "^9.0.0",
 		"mongoose": "^9.0.0",
 		"reflect-metadata": "^0.2.0",
